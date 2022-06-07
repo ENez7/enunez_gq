@@ -310,16 +310,15 @@ const resolvers = {
         // CUENTA
         nuevaCuenta: async (_, { input }, ctx ) => {
             const { numeroCuenta, clienteId, saldoCuenta, sucursalId } = input;
-            const existeCliente = await Cliente.findById(clienteId);
+            const existeCliente = await Cliente.findById( clienteId );
             if (!existeCliente) {
-                throw new Error(`El Cliente con el ID ${clienteId} no existe.`)
+                throw new Error(`El Cliente con el ID ${ clienteId } no existe.`)
             }
-            const existeSucursal = await Sucursal.findById(sucursalId);
+            const existeSucursal = await Sucursal.findById( sucursalId );
             if (!existeSucursal) {
-                throw new Error(`La Sucursal con el ID ${sucursalId} no existe`);
+                throw new Error(`La Sucursal con el ID ${ sucursalId } no existe`);
             }
-            // QUIZAS ERROR AQUI
-            const banco = await Banco.findById(ctx.oficial.bancoId);
+            const banco = await Banco.findById( ctx.oficial.bancoId );
             if (existeSucursal.bancoId.toString() !== ctx.oficial.bancoId) {
                 throw new Error(`La Sucursal ${ existeSucursal.nombre } no pertenece al banco ${ banco.nombre }.`)
             }
@@ -336,11 +335,12 @@ const resolvers = {
                 throw new Error(`El saldo de cuenta ${ saldoCuenta } no puede ser negativo.`)
             }
 
-            const actualizarCliente = await Cliente.findById(clienteId);
+            const actualizarCliente = await Cliente.findById( clienteId );
             actualizarCliente.saldoTotal = actualizarCliente.saldoTotal + saldoCuenta;
             await Cliente.findByIdAndUpdate( { _id: clienteId }, actualizarCliente, { new: true } );
             const nuevaCuenta = new Cuenta(input);
             nuevaCuenta.bancoId = ctx.oficial.bancoId;
+            nuevaCuenta.sucursalId = sucursalId;
             return await nuevaCuenta.save();
         },
         actualizarCuenta: async (_, { id, input }, ctx ) => {
