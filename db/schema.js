@@ -78,6 +78,40 @@ const typeDefs = gql `
         token: String
     }
     
+    # Parcial 2
+    type PlazoFijo {
+        id: ID
+        oficialId: ID
+        clienteId: ID
+        sucursalId: ID
+        fechaDeposito: String
+        plazoDeposito: EnumMeses
+        monedaDeposito: EnumMonedas
+        montoDeposito: Float
+    }
+    
+    type ClienteMayorPlazoFijo {
+        id: ID
+        nombreCliente: String
+        nombreOficial: String
+        idCliente: ID
+        idOficial: ID
+        plazoDeposito: EnumMeses
+        monedaDeposito: EnumMonedas
+        monto: Float
+    }
+    
+    enum EnumMeses {
+        MESES_6
+        MESES_12
+        MESES_24
+    }
+    
+    enum EnumMonedas {
+        BOL
+        USD
+    }
+    # Fin Parcial 2
     # Enums
     enum TipoCliente {
         CATEGORIA_A
@@ -137,6 +171,16 @@ const typeDefs = gql `
         referencia: String!
     }
     
+    # Parcial 2
+    input PlazoFijoInput {
+        clienteId: ID!
+        sucursalId: ID!
+        plazoDeposito: EnumMeses!
+        monedaDeposito: EnumMonedas!
+        montoDeposito: Float!
+    }
+    # Fin Parcial 2
+    
     # Queries
     type Query {
         #Token
@@ -168,6 +212,8 @@ const typeDefs = gql `
         obtenerSaldosPorSucursal( id: ID ): [ SaldoCliente ]
         obtenerClienteMasTransaccionesSucursal( id: ID ): TransaccionesClienteSucursal
         mejorOficial: MejorOficial
+        #Parcial 2
+        obtenerClienteMayorPlazoFijo: ClienteMayorPlazoFijo
     }
     # Mutations
     type Mutation {
@@ -192,6 +238,10 @@ const typeDefs = gql `
         #Transaccion
         nuevaTransaccion( input: TransaccionInput ): Transaccion
         revertirTransaccion( id: ID ): Transaccion
+        
+        #Parcial 2
+        nuevoPlazoFijo( input: PlazoFijoInput ): PlazoFijo
+        eliminarPlazoFijo( id: ID! ): String
     }
 `;
 

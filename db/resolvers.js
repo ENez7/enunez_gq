@@ -7,6 +7,7 @@ const Cuenta = require('../models/Cuenta');
 const Oficial = require('../models/OficialBanco');
 const Sucursal = require('../models/Sucursal');
 const Transaccion = require('../models/Transaccion');
+const PlazoFijo = require('../models/PlazoFijo');
 
 require('dotenv').config( { path: 'var.env' } );
 
@@ -34,7 +35,7 @@ const resolvers = {
             };
         },
         desencriptarTokenOficial: (_, { token } ) => {
-            return jwt.verify( token, process.env.FIRMA_SECRETA);
+            return jwt.verify( token, process.env.FIRMA_SECRETA );
         },
         // OFICIAL
         obtenerOficiales: async () => {
@@ -216,7 +217,45 @@ const resolvers = {
             }
 
             return mejorOficial;
-        }
+        },
+        obtenerClienteMayorPlazoFijo: async ( _, {}, ctx ) => {
+            let clienteMPF = {
+                nombreCliente: '',
+                nombreOficial: '',
+                idCliente: '',
+                idOficial: '',
+                plazoDeposito: 'MESES_6',
+                monedaDeposito: 'BOL',
+                monto: 0,
+            };
+
+            const depositos = await PlazoFijo.find( {} );
+            for await (const deposito of depositos) {
+                const { montoDeposito } = deposito;
+                if( montoDeposito > clienteMPF.monto ) {
+                    clienteMPF.monto = montoDeposito;
+                    const { oficialId, clienteId, plazoDeposito, monedaDeposito } = deposito;
+                    // Obtener nombre cliente
+                    const cliente = await Cliente.findById( clienteId );
+                    const { nombre } = cliente;
+                    // Obtener nombre oficial
+                    {
+                        const oficial = await Oficial.findById(oficialId);
+                        const {nombre} = oficial;
+                        clienteMPF.nombreOficial = nombre;
+                        clienteMPF.idOficial = oficialId;
+                    }
+                    // Asignar datos
+                    clienteMPF.nombreCliente = nombre;
+                    clienteMPF.idCliente = clienteId;
+                    clienteMPF.monto = montoDeposito;
+                    clienteMPF.monedaDeposito = monedaDeposito;
+                    clienteMPF.plazoDeposito = plazoDeposito;
+                    console.log(clienteMPF);
+                }
+            }
+            return clienteMPF;
+        },
     },
     Mutation: {
         // OFICIAL
@@ -482,6 +521,48 @@ const resolvers = {
             } catch (e) {
                 console.log(`N TRANSACCION: ${ e }`);
             }
+        },
+        // PARCIAL 2
+        nuevoPlazoFijo: async (_, { input }, ctx ) => {
+            const { clienteId, sucursalId, montoDeposito } = input;
+            const existeCliente = await Cliente.findById( clienteId );
+            if(!existeCliente) {
+                throw new Error(`El cliente con id ${clienteId} no existe.`);
+            }
+            const existeSucursal = await Sucursal.findById( sucursalId );
+            if(!existeSucursal) {
+                throw new Error(`La sucursal con id ${sucursalId} no existe.`);
+            }
+            const banco = await Banco.findById( ctx.oficial.bancoId );
+            if(existeSucursal.bancoId.toString() !== ctx.oficial.bancoId) {
+                throw new Error(`Esta sucursal no pertene a ${ banco.nombre }.`);
+            }
+
+            if(existeCliente.oficialBancoId.toString() !== ctx.oficial.id) {
+                throw new Error('No tiene las credenciales para acceder a esta informacion.');
+            }
+
+            if(montoDeposito <= 0) {
+                throw new Error('El monto no puede ser igual o inferior a 0');
+            }
+
+            const nuevoPlazoFijo = new PlazoFijo(input);
+            nuevoPlazoFijo.oficialId = ctx.oficial.id;
+            return await nuevoPlazoFijo.save();
+        },
+        eliminarPlazoFijo: async ( _, { id }, ctx ) => {
+            const existePlazoFijo = await PlazoFijo.findById( id );
+            if(!existePlazoFijo) {
+                throw new Error(`El plazo fijo con id ${id} no existe.`);
+            }
+
+            const cliente = await Cliente.findById( existePlazoFijo.clienteId );
+            if(cliente.oficialBancoId.toString() !== ctx.oficial.id){
+                throw new Error('No tienes las credenciales para realizar esta operacion.');
+            }
+
+            await PlazoFijo.findByIdAndDelete( id );
+            return 'Plazo fijo eliminado correctamente.';
         }
     },
 };
