@@ -7,7 +7,7 @@ const typeDefs = gql `
         nombre: String
         email: String
         creado: String
-        bancoId: ID
+        bancoId: ID # Devolver todo el banco
     }
     
     type Banco {
@@ -184,7 +184,6 @@ const typeDefs = gql `
     # Queries
     type Query {
         #Token
-        encriptarTokenOficial( input: AutenticarOficialInput ): Token
         desencriptarTokenOficial( token: String ): Oficial
         #Oficial
         obtenerOficiales: [ Oficial ]
@@ -217,6 +216,8 @@ const typeDefs = gql `
     }
     # Mutations
     type Mutation {
+        # Token
+        encriptarTokenOficial( input: AutenticarOficialInput ): Token
         #Oficiales
         nuevoOficial( input: OficialInput ): Oficial
         #Banco

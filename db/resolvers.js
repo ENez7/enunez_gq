@@ -19,21 +19,6 @@ const CrearToken = ( oficial, firma, expiresIn ) => {
 const resolvers = {
     Query: {
         // TOKEN
-        encriptarTokenOficial: async (_, { input } ) => {
-            const { email, password } = input;
-
-            const existeOficial = await Oficial.findOne( { email } );
-            if(!existeOficial)
-                throw new Error(`El email ${ email } no existe.`);
-
-            const passwordCorrecto = await bcryptjs.compare(password, existeOficial.password);
-            if(!passwordCorrecto)
-                throw new Error('Password incorrecto');
-
-            return {
-                token: CrearToken(existeOficial, process.env.FIRMA_SECRETA, 300000)
-            };
-        },
         desencriptarTokenOficial: (_, { token } ) => {
             return jwt.verify( token, process.env.FIRMA_SECRETA );
         },
@@ -258,6 +243,22 @@ const resolvers = {
         },
     },
     Mutation: {
+        // TOKEN
+        encriptarTokenOficial: async (_, { input } ) => {
+            const { email, password } = input;
+
+            const existeOficial = await Oficial.findOne( { email } );
+            if(!existeOficial)
+                throw new Error(`El email ${ email } no existe.`);
+
+            const passwordCorrecto = await bcryptjs.compare(password, existeOficial.password);
+            if(!passwordCorrecto)
+                throw new Error('Password incorrecto');
+
+            return {
+                token: CrearToken(existeOficial, process.env.FIRMA_SECRETA, 300000)
+            };
+        },
         // OFICIAL
         nuevoOficial: async (_, { input } ) => {
             const { email, password } = input;
